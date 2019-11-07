@@ -1,13 +1,13 @@
 CC	=	gcc
 CFLAGS	=	-g
 
-TARGET1	=	deneme
-TARGET2	=	deneme2
+TARGET1	=	oss
+TARGET2	=	user
 
-OBJS1	=	deneme.o
-OBJS2	=	deneme2.o
+OBJS1	=	oss1.o
+OBJS2	=	user1.o
 
-all:	deneme	deneme2
+all:	oss	user
 
 $(TARGET1):	$(OBJS1)
 	$(CC) -o $(TARGET1) $(OBJS1) -lpthread
@@ -15,11 +15,11 @@ $(TARGET1):	$(OBJS1)
 $(TARGET2):	$(OBJS2)
 	$(CC) -o $(TARGET2) $(OBJS2) -lpthread
 
-$(OBJS1):	deneme.c shmemsem.h
-	$(CC) $(CFLAGS) -c deneme.c shmemsem.h
+$(OBJS1):	oss1.c shmemsem.h
+	$(CC) $(CFLAGS) -c oss1.c shmemsem.h
 
-$(OBJS2):	deneme2.c shmemsem.h
-	$(CC) $(CFLAGS) -c deneme2.c shmemsem.h
+$(OBJS2):	user1.c shmemsem.h
+	$(CC) $(CFLAGS) -c user1.c shmemsem.h
 
 clean:	
 		/bin/rm	-f *.o $(TARGET1) $(TARGET2)
