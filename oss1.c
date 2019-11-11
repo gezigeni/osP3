@@ -6,7 +6,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-//#define BUFSIZE 64
+#define BUFSIZE 64
 
 SharedData *shmem;
 int shmid;
@@ -21,8 +21,7 @@ int main(int argc, char * argv[]) {
         int sflag = 0;
         int lflag = 0;
         int tflag = 0;
-        int numberOfProcess = 5;
-
+	int totalProcessDied = 0;
 	
 	while((c = getopt(argc, argv, "hs:l:t:")) != -1){
     
@@ -69,7 +68,7 @@ int main(int argc, char * argv[]) {
         }
 
 
-	key_t shmkey = ftok("Makefile",777);
+	key_t shmkey = ftok("test.txt",777);
 	if (shmkey == -1) {
 		perror("Ftok failed");
 		exit(-1);
@@ -86,60 +85,78 @@ int main(int argc, char * argv[]) {
 		perror("Failed to attach to shared memory region");
 		exit(-1);
 	}
+//----------------------------------------------------------------
+
 // Now initiate semaphore
 	sem_init(&(shmem->mutex), 1, 1);
 	shmem->timeSec = 0;
 	shmem->timeNanosec = 0;
-	//printf("timeSec is %d\n", shmem->timeSec);
+	shmem->counter = 0;
+	
 
-	for(j = 1; j <= numberOfProcess; j++){
-                if ((childpid = fork()) <= 0){
-                        break;
-                }
+	//int pid_arr[numberOfProcess]
+	printf("THIS IS OSS PID = %ld\n", getpid());
+	int masterPid = getpid();
+printf("number of process = %d\n", numberOfProcess);	
+       for (j = 0; j < numberOfProcess; j++){
+       		if (childpid = fork())
+         		break;
+		shmem->pid_arr[j] = getpid();
+printf("pid_arr = %d\n", shmem->pid_arr[j]);
+	}
 
-        }
-
-
-
-	//pid_t childpid = fork();
-	if (childpid == 0) {
-// Fork and exec off a child
+	if (getpid() != masterPid) {
 		char *arglist[]={"./user",NULL};
 		execvp(arglist[0],arglist);
 		perror("Exec failed");
 	}
+	printf("EXECI GECEN PID = %ld\n", getpid());
 	int i = 0;
-	while (i++ < 10) {
+	while (1) {
 
-		if(shmem->shmMsgNanosec > 0){
-                	//printf("MESSAGE FROM CHILD TO PARENT IS SENT");
-                	fprintf(fp, "Child pid %ld is terminating at my time %d second, %d nanosecond because it reached %d second, %d nanosecond in child process\n", (long)shmem->pid, shmem->timeSec, shmem->timeNanosec, shmem->timeSec, shmem->shmMsgNanosec);
-			//fprintf(fp, " process ID:%ld", (long)getpid());
-			//childpid = fork();
-			shmem->shmMsgNanosec = 0;
-        	}
-
-		shmem->timeNanosec += 100000;
+	
+		sem_wait(&(shmem->mutex));
+		shmem->timeNanosec += 50;
 		if(shmem->timeNanosec >= 1000000000){
 			shmem->timeNanosec -= 1000000000;
 			shmem->timeSec++;
 		}
-		//printf("timeNanosec is %d\n", shmem->timeNanosec);
-		//printf("timeSec is %d\n", shmem->timeSec);
-		sleep(rand() % 3);
-// critical section
-		sem_wait(&(shmem->mutex));
-		printf("Entering critical section of process %d\n",getpid());
-		sleep(rand() % 3);
-		printf("Leaving critical section of process %d\n",getpid());
 		sem_post(&(shmem->mutex));
+		while(shmem->counter > 0){
+			totalProcessDied++;
+			sem_wait(&(shmem->mutex));	
+			printf("OSS Entering critical section of process %d\n",getpid());
+			
+					
+			fprintf(fp, "Child pid %ld is terminating at my time %d second, %d nanosecond because it reached %d second, %d nanosecond in child process\n", (long)shmem->pid, shmem->timeSec, shmem->timeNanosec, shmem->shmMsgSec, shmem->shmMsgNanosec);		
+			printf("Child pid %ld is terminating at my time %d second, %d nanosecond because it reached %d second, %d nanosecond in child process\n", (long)shmem->pid, shmem->timeSec, shmem->timeNanosec, shmem->shmMsgSec, shmem->shmMsgNanosec); 
+			shmem->counter--;
+			for(i = 0; i < numberOfProcess; i++){
+				if(shmem->pid_arr[i] == shmem->pid){
+					childpid = fork();
+					if(childpid == 0){
+						shmem->pid_arr[i] = getpid();
+						char *arglist[]={"./user",NULL};
+						execvp(arglist[0],arglist);					
+					}			
+					break;					
+				}
+			}
+			
+                	printf("OSS Leaving critical section of process %d\n",getpid());
+                	sem_post(&(shmem->mutex));
+
+
+		}
+
+		if(totalProcessDied > 10){
+			shmdt(shmem);
+			shmctl(shmid, IPC_RMID,NULL);
+			fclose(fp);				
+		}
 	}
 	wait();
 
-// Detach
-	shmdt(shmem);
-// Free up shared memory 
-	shmctl(shmid, IPC_RMID,NULL);
-	fclose(fp);
+
 }
 //

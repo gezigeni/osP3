@@ -15,14 +15,16 @@ $(TARGET1):	$(OBJS1)
 $(TARGET2):	$(OBJS2)
 	$(CC) -o $(TARGET2) $(OBJS2) -lpthread
 
-$(OBJS1):	oss1.c shmemsem.h
+
+$(OBJS1):	oss1.c shmemsem.h 
 	$(CC) $(CFLAGS) -c oss1.c shmemsem.h
 
 $(OBJS2):	user1.c shmemsem.h
 	$(CC) $(CFLAGS) -c user1.c shmemsem.h
 
+
 clean:	
-		/bin/rm	-f *.o $(TARGET1) $(TARGET2)
+		/bin/rm	-f *.o $(TARGET1) $(TARGET2) 
 
 
 

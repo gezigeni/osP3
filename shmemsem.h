@@ -2,10 +2,21 @@
 #define SHMEMSEM_H
 
 #include <semaphore.h>
-#include "queue.h"
+#include <limits.h>
+#include <stdlib.h>
 #include <stdio.h>
-#define BUFSIZE 64
 
+#define BUFSIZE 64
+#define NUM 5
+
+static numberOfProcess = 5;
+
+/*typedef struct {
+    int front, rear, size;
+    unsigned capacity;
+    int *array;
+} Queue;
+*/
 
 typedef struct {
 	int shmInt;
@@ -13,10 +24,11 @@ typedef struct {
 	int timeNanosec;
 	int shmMsgSec;
 	int shmMsgNanosec;
-	pid_t pid;
+	int counter;
 	sem_t mutex;
-	struct Queue pid_queue;
-	struct Queue time_queue;
+	int pid;
+	int pid_arr[NUM];
 } SharedData;
+
 
 #endif
